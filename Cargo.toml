@@ -1,0 +1,4 @@
+[package]
+name = "hashtrie"
+version = "0.1.0"
+authors = ["Lesley Lai <lesleylai@lesleylai.info>"]
