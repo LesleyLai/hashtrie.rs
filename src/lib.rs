@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::option::Option;
 use std::rc::Rc;
 
@@ -18,7 +17,7 @@ fn branch_index(hash: Hash) -> usize {
 
 enum Node<T> {
     Leaf(T),
-    Branch(HashMap<usize, Node<T>>),
+    Branch([Option<Rc<Node<T>>>; BRANCH_SIZE]),
 }
 
 fn get_at<T>(node: &Node<T>, hash: Hash) -> Option<&T> {
@@ -29,11 +28,33 @@ fn get_at<T>(node: &Node<T>, hash: Hash) -> Option<&T> {
             assert!(hash == 0);
             Some(v)
         }
-        Branch(children) => match &children.get(&branch_index(hash)) {
+        Branch(children) => match children[branch_index(hash)] {
             None => None,
-            Some(node) => get_at(&node, shift_hash(hash)),
+            Some(ref node) => get_at(&node, shift_hash(hash)),
         },
     }
+}
+
+struct HashTrie<T> {
+    root: Node<T>,
+}
+
+impl<T> HashTrie<T> {
+    fn new() -> HashTrie<T> {
+        HashTrie {
+            root: Node::Branch([
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None, None, None,
+            ]),
+        }
+    }
+
+    // fn insert(&self, element: T) -> HashTrie<T> {
+    //     HashTrie {
+    //         root: Node::Branch(HashMap::new()),
+    //     }
+    // }
 }
 
 #[cfg(test)]
@@ -50,21 +71,93 @@ mod chunked_hash_tests {
 
     #[test]
     fn explicit_node_creation_and_lookup() {
-        let leaf = Node::Leaf(1);
+        let leaf = Rc::new(Node::Leaf(1));
 
-        let mut level1_map = HashMap::new();
-        level1_map.insert(1, leaf);
-        let level1: Node<i32> = Node::Branch(level1_map);
+        let level1_map = [
+            None,
+            Some(leaf),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ];
+        let level1 = Rc::new(Node::Branch(level1_map));
 
         let hash: usize = 0b00001_00010;
         let shifted: usize = shift_hash(hash);
 
         assert_eq!(get_at(&level1, shifted), Some(&1));
 
-        let mut trie_map = HashMap::new();
-        trie_map.insert(2, level1);
+        let trie_map = [
+            None,
+            None,
+            Some(level1),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ];
         let trie: Node<i32> = Node::Branch(trie_map);
 
         assert_eq!(get_at(&trie, hash), Some(&1));
+        assert_eq!(get_at(&trie, 0), None);
+    }
+
+    #[test]
+    fn insert_element() {
+        let trie: HashTrie<i32> = HashTrie::new();
+        // let trie2 = trie.insert(100);
+        // let trie_2: Node<i32> = insert(trie, 1);
     }
 }
